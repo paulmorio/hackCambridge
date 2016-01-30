@@ -1,4 +1,8 @@
-#Virtualenv
+# Virtualenv
 /venv
 
+# Private
 messages.htm
+
+# Beaker Notebook
+beaker-notebook-1.5.1-0-g6e6bdd3-ubuntu

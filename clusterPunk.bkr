@@ -1,0 +1,348 @@
+{
+    "beaker": "2",
+    "evaluators": [
+        {
+            "name": "HTML",
+            "plugin": "HTML",
+            "view": {
+                "cm": {
+                    "mode": "htmlmixed"
+                }
+            }
+        },
+        {
+            "name": "TeX",
+            "plugin": "TeX",
+            "view": {
+                "cm": {
+                    "mode": "stex"
+                }
+            }
+        },
+        {
+            "name": "JavaScript",
+            "plugin": "JavaScript",
+            "view": {
+                "cm": {
+                    "mode": "javascript",
+                    "background": "#FFE0F0"
+                }
+            }
+        },
+        {
+            "name": "IPython",
+            "plugin": "IPython",
+            "imports": "",
+            "supplementalClassPath": "",
+            "setup": "%matplotlib inline\nimport numpy\nimport matplotlib\nfrom matplotlib import pylab, mlab, pyplot\nnp = numpy\nplt = pyplot\nfrom IPython.display import display\nfrom IPython.core.pylabtools import figsize, getfigs\nfrom pylab import *\nfrom numpy import *\n",
+            "view": {
+                "cm": {
+                    "mode": "python"
+                }
+            }
+        }
+    ],
+    "cells": [
+        {
+            "id": "markdownmqLpeS",
+            "type": "markdown",
+            "body": [
+                "# A Small Research Hack: Detecting and Visualising Clusterings in Protein Interaction Networks (And a few other cool things like Facebook)",
+                "",
+                "The study of protein-protein interactions (PPIs) deter-mined by high-throughput experimental techniques has created the need for methods allowing us to discover new information about biological function. These interactions can be thought of as a large-scale network, with nodes representing proteins and edges signifying an interaction between two proteins. Often, PPI networks can be on the scale of an entire genome, called the interactome. With the rapid pace of model organism interactome generation, the development of computational approaches to analyze these networks is increasingly in demand. In a PPI network, we can potentially find protein complexes or functional modules as densely connected subgraphs. A protein complex is a group of proteins that interact with each other at the same time and place creating a quaternary structure. Functional modules are composed of proteins that bind each other at different times and places and are involved in the same cellular process. Various graph clustering algorithms have been applied to PPI networks to detect protein complexes or functional modules, including several designed specifically for PPI network analysis.",
+                "",
+                "## WHO FOR?",
+                "**EVERYONE**",
+                "",
+                "## WHY?",
+                "**CAUSE** it helps find scientists hyptothesise about the functional nature of our bodies, or pretty much any living organism provided its interactome can be extracted. Moreover it helps us hypothesise about new drugs. ",
+                "",
+                "It also helps you find the people you should be friends with.",
+                "",
+                "## Which ones were made?",
+                "- K Clique Percolation",
+                "- MCode",
+                "- DP Clustering",
+                "- IPCA",
+                "- CoAch",
+                "",
+                ""
+            ],
+            "mode": "preview",
+            "evaluatorReader": false
+        },
+        {
+            "id": "code6HIPet",
+            "evaluator": "IPython",
+            "type": "code",
+            "input": {
+                "body": [
+                    "import networkx",
+                    "import graphistry",
+                    "graphistry.register(key='8d539d686343690f3c9066b364a04b1eaaaef3d580840f562d1480a27b31c8c1')",
+                    "",
+                    "# From Scratch",
+                    "def draw_graph(graph):",
+                    "    # create networkx graph",
+                    "    G=networkx.Graph()",
+                    "",
+                    "    # There are graph layouts like shell, spring, spectral and random.",
+                    "    # Shell layout usually looks better, so we're choosing it.",
+                    "    # I will show some examples later of other layouts",
+                    "    graph_pos = networkx.spring_layout(graph)",
+                    "",
+                    "    # draw nodes, edges and labels",
+                    "    networkx.draw_networkx_nodes(G, graph_pos, node_size=1000, node_color='blue', alpha=0.3)",
+                    "    networkx.draw_networkx_edges(G, graph_pos)",
+                    "    networkx.draw_networkx_labels(G, graph_pos, font_size=12, font_family='sans-serif')",
+                    "",
+                    "    # show graph",
+                    "    plt.show()",
+                    ""
+                ]
+            },
+            "output": {
+                "result": {
+                    "type": "Results",
+                    "outputdata": [
+                        {
+                            "type": "out",
+                            "value": "Couldn't import dot_parser, loading of dot files will not be possible.\n"
+                        },
+                        {
+                            "type": "err",
+                            "value": "WARNING: Could not contact proxy-labs.graphistry.com. Are you connected to the Internet?\n"
+                        }
+                    ]
+                },
+                "selectedType": "Results",
+                "state": {},
+                "pluginName": "IPython",
+                "shellId": "08FC1032BC6F4DAB9DF0E9F1B3F64414",
+                "elapsedTime": 373,
+                "height": 52
+            },
+            "evaluatorReader": true
+        },
+        {
+            "id": "markdownDdAD6X",
+            "type": "markdown",
+            "body": [
+                "# Clustering Algorithm: K Clique Percolation",
+                "A clique merging algorithm. Given a set k, the algorithm goes on to produce k clique clusters and merge them as necessary.",
+                "",
+                "Clique Percolation: The method of clique percolation was first introduced by Der ́enyi et al. [15] for random graphs and was formally defined by Palla et al. [8] (in supplementary material). Because it is designed to discover highly dense communities of nodes, clique percolation has become a popular method for protein-complex prediction in PPI networks. Several clique percolation algorithms have been proposed, notably CFinder [16], sequential clique percolation (SCP) [17], and most recently, a very efficient implementation using a binary tree hierarchy and Bloom filters [18].",
+                "",
+                "A clique is a completely connected subset of vertices in a graph, where an edge exists between every pair of vertices in the subset. The goal of clique percolation is, given a network and some $k$, to find all cliques of size $k$ in the network and build percolation communities from them. Two k-cliques are said to percolate into each other if they have k − 1 vertices in common. Such k-cliques can be said to be adjacent to one another, and a k-clique is reachable from another k-clique if there exists a sequence of adjacent k- cliques by which the first clique can be transformed into the second. Percolation communities are formed from the union of maximally reachable k-cliques, where every k-clique is reachable  from every other k-clique in the set. To find percolation communities, the CFinder and Bloom filter methods start by discovering maximal cliques (cliques which are not contained in any larger clique within the given network) and applying adjacency filtering for a given $k$. CFinder uses a clique-clique overlap matrix to find percolation communities, while the Bloom filter method eliminates non-adjacent k-cliques in a binary tree hierarchy. In a different approach, SCP finds all k-cliques in the network and percolates based on common size-(k − 1) sub- cliques, using theoretical bipartite graph methods to increase efficiency. The Bloom filter method empirically outperforms the other methods for all values of k, and SCP has been found to be most efficient for low k. Farkas et al. [19] discuss procedures for applying clique intensity in order to adapt the clique percolation method for weighted network analysis. The intensity $I$ of a subgraph $G = (V, E)$ is defined as the geometric mean of its weights",
+                "",
+                "$$ I(G) = (\\Pi{_{e \\in E}} w_{e})^{-|E|} $$",
+                "",
+                "Given a k, we can order the k-cliques of a graph by intensity, $w_{1} ≥ w_{2} ≥ . . . ≥ w_{n}$ . Farkas et al. suggest a",
+                "method, which we adopt here, of thresholding the cliques used in the clique percolation based on intensity, that is, excluding cliques whose intensity is below a certain value. If this threshold is above $w_{1}$ , no percolation clusters are found because no clique meets the intensity theshold. Conversely, if the threshold is below w n , the method is equivalent to unweighted clique percolation, since no cliques are filtered out. To balance these two extremes – no clusters yielded versus potentially giant clusters yielded – we iteratively de- crease this threshold, starting at $w_{1}$ and working down, until the ratio of the size of the two largest clusters reaches two. While this method can fluctuate for small-sized networks, it is well-suited for PPI analysis.",
+                "",
+                "One difficulty to this approach is that in determining clique intensities, every k-clique in the network must be generated. The CFinder software suite has an implementation for this weighted graph approach, but we found it intractable when given our PPI network. Moreover, since the Bloom filter method is intended for use with maximal cliques, it is not suited for the generation of all k-cliques. Therefore, we chose to implement a weighted version of the",
+                "SCP algorithm, which naturally generates all cliques of size k and is therefore convenient for such adaption.",
+                ""
+            ],
+            "mode": "preview",
+            "evaluatorReader": false
+        },
+        {
+            "id": "markdown5Yi3Yk",
+            "type": "markdown",
+            "body": [
+                "# Clustering Algorithm: MCode",
+                "seed growth approach",
+                "",
+                "MCODE: Introduced by Bader and Hogue in 2003 [9], MCODE is the earliest seed-growth method for predicting protein complexes from PPI networks. MCODE works in two steps: 1) vertex weighting, and 2) molecular complex prediction. In the vertex weighting step, the weight of a vertex v in the PPI network is calculated from the highest k-core of v’s neighborhood, including v. The k-core of a graph is a subgraph where every node is of degree k or greater; the highest k-core is simply the k-core with the highest value of k. The weight of v is defined as this maximum k times the density of the corresponding k-core. In the current implementation of MCODE published online (http://baderlab.org/Software/MCODE), the density of a k-core $C_{k} = (V_{k} , E_{k} )$ is defined as",
+                "",
+                "$$ d(k) = \\frac{|E_{k}|}{|V_{k}|^{2}}$$",
+                ""
+            ],
+            "mode": "preview",
+            "evaluatorReader": false
+        },
+        {
+            "id": "markdown22tbRq",
+            "type": "markdown",
+            "body": [
+                "# Clustering Algorithm: DP Clustering",
+                "seed growth approach",
+                "",
+                "DPClus: DPClus, defined by Amin et. al in [10], projects weights onto an unweighted graph using a common neighbors approach. In DPClus, the weight of an edge $(u, v) \\in E$ is defined as the number of common neighbors between $u$ and $v$. Similarly, the weight of a vertex is its weighted degree – the sum of all edges connected to the vertex. This algorithm works much like MCODE, except the stopping condition for cluster formation is based on cluster density, rather than vertex weight.",
+                "",
+                "DPClus relies on two stopping thresholds for cluster formation: cluster density $(d_{in} )$ and cluster property $(cp_{in})$. The density $d_{k}$ of a cluster $C_{k} = (V _{k} , E_{k})$ is defined as the ratio of the number of edges in the cluster to the number of possible edges in the cluster, or",
+                "",
+                "$$ d_{k} = \\frac{E_{k}}{|V_{k}| * (|V_{k}| - 1)}$$",
+                "",
+                "The cluster property $cp_{nk}$ between a node $n$ and a cluster $C_{k}$ is defined as the inverse density of $C_{k}$ (without n) weighted by the proportion of cluster nodes which are adjacent to n:",
+                "",
+                "$$ cp_{nk} = \\frac{|N_{n} \\bigcap V_{k}|}{d_{k} * |V_{k}|} $$",
+                "",
+                "where $N_{n} is the set of vertices adjacent to n. For seed node selection, the seed is chosen as the vertex with the highest weight, unless the highest weight is zero (meaning that no two nodes in the graph share any common neighbors), in which case the vertex with the highest degree is chosen as the seed. The cluster is grown by iteratively selecting the highest priority vertex from its set of neighbor vertices. The priority of a neighbor vertex is determined by 1) the number of cluster nodes adjacent to the neighbor and 2) the sum of the edge weights between the neighbor and its adjacent cluster nodes. Cluster growth stops when no neighbor vertex can be added without either the cluster density (including the neighbor) or the cluster property (between the neighbor and the original cluster) dropping below its respective threshold. At this point, all nodes in the cluster are removed from the network, and the edge and vertex weights of the resulting graph are recalculated. The algorithm terminates when no edges in the graph remain. Additionally, the authors of DPClus define a ’fine-tuning’ procedure in the special case that all neighbors of a cluster are connected to the cluster by a single edge. If this occurs, neighbor vertices are prioritized by the number of other neighbor vertices to which they are adjacent, minus the number of neighbor vertices to which their connected cluster node is adjacent. In our experiments, this special case was never observed.",
+                "",
+                "",
+                "Like MCODE, DPClus does not natively generate overlapping clusters but does allow for overlapping cluster nodes can be added in a post-processing step. To do this, DPClus considers all neighbors of the original cluster, both visited and unvisited. Using this neighbor set, it applies the same iterative prioritize-add-reweight procedure as before, but does not expand the neighborhood frontier when a neighbor is added to the cluster. That is, only neighbors of the original cluster are considered as candidates for expansion. The method for incorporating edge weights to DPClus affects much of the algorithm. The seed node for a new cluster is simply chosen as the highest global weighted- degree vertex. This weighted degree is computed from the remaining graph, just as in the unweighted version.",
+                "",
+                "When prioritizing neighbor vertices, only the first criterion is altered, ordering by: 1) the sum of the global edge weights between the vertex and the cluster node, and 2) the sum of the local edge weights between the vertex and the cluster node. Finally, when determining cluster density with a candidate neighbor vertex included, the general formula for weighted subgraph density is employed using the global edge weights. Local edge and vertex weights of the remaining graph are recalculated every iteration in the exact same manner as before."
+            ],
+            "mode": "preview",
+            "evaluatorReader": false
+        },
+        {
+            "id": "markdown40qMwA",
+            "type": "markdown",
+            "body": [
+                "# Clustering Algorithm: IPCA",
+                "Seed growth approach",
+                "",
+                "IPCA was introduced by Li et. al [11] as a modified version of DPClus. In contrast to DPClus, this method focuses on the maintaining the diameter of a cluster, defined as the maximum shortest distance between all pairs of vertices, rather than its density. In doing so, the seed growth aspect of IPCA emphasizes structural closeness of a predicted protein complex, as well as structural connectivity. Like DPClus, IPCA computes local vertex and edge weights by counting the number of common neighbors shared between two vertices. However, IPCA calculates these values only once at the beginning of the algorithm, rather than updating them every time a discovered cluster is removed from the graph. This allows overlap to occur naturally between clusters, as cluster nodes are not permanently removed from the graph; however, it can also lead to a large amount of cluster overlap. IPCA can incorporate two different neighbor-ordering thresholds: (SP ≤ d) and (ASP ≤ d). (SP ≤ d) requires that the diameter of a cluster never exceed d, while (ASP ≤ d) considers the average length of the shortest paths between all pairs vertices in a cluster. Because the currently published implementation of IPCA only implements (SP ≤ d), we focus on this threshold alone. Seed node selection in IPCA works the same as in DPClus, where the unvisited vertex with the highest weight is chosen, with ties going to the vertex with the highest degree. A cluster K is extended by ordering its neighbors by the value $IN_{vK}$ , defined as ",
+                "",
+                "$$ IN_{vK} = \\frac{m_{vK}}{|K|} $$",
+                "",
+                "where m vK is the number of edges between a neighbor vertex v and the cluster. The highest-valued neighbor v is added",
+                "to the cluster if it meets two conditions: 1) IN vK ≥ T in , and 2) SP (K + v) ≤ d. Here, T in is a user-specified threshold dictating the minimum percentage of adjacent cluster nodes that v must share in order to be added to the cluster. The second condition requires that the maximum shortest path length between v and every member of K be no greater than d. Typically, d is set to two. To integrate edge weights to IPCA, the value IN vK subsequently becomes:",
+                "",
+                "$$ IN_{vK} = \\frac{\\sum{_{u \\in k}}w(u,v)}{|K|} $$",
+                "",
+                "Importantly, the requirement of IPCA that IN vK ≥ T in becomes much more stringent in a weighted network context. If a vertex is chosen as a seed node but has no associated global edge weights greater than T in , no neighbors will be added to the cluster. In this event, the seed node is still marked as visited, but the size-1 cluster is not reported as a predicted protein complex. This greatly reduces the number of clusters reported by the IPCA method. If a neighboring vertex meets both of the above criteria, it is added to the cluster, and the priorities of the neighbors of this new cluster are recalculated. If no such neighbor is found, cluster growth stops, and the cluster is output as a predicted protein complex. The vertices in a generated cluster are marked as visited, making them ineligible as seed nodes but still able to be included in future clusters."
+            ],
+            "mode": "preview",
+            "evaluatorReader": false
+        },
+        {
+            "id": "markdownbjVvoF",
+            "type": "markdown",
+            "body": [
+                "# Clustering Algorithm: CoAch",
+                "Combined Approach",
+                "",
+                "CoAch: The motivation behind the core-attachment(CoAch) algorithm [13] comes from the observation that protein complexes often have a dense core of highly interactive proteins. CoAch works in two steps, first discovering highly connected regions (“preliminary cores”) of a network and then expanding these regions by adding strongly associated neighbors. The algorithm operates with three user specified parameters: minimum core density d (for preliminary cores), maximum core affinity t (similarity threshold for distinct preliminary cores), and minimum neighbor closeness (for attaching non-core neighbors to preliminary cores). Minimum neighbor closeness is typically given as one-half. The first step in CoAch is to discover protein-complex cores. To this end, a set of candidate cores is generated for every vertex in the graph, with similar cores consolidated to be maximally dense. The process for generating candidate cores from a vertex v is as follows: First, the algorithm determines G v , the 2-core graph of v’s neighborhood, including v. This step removes nodes that have no connections in v’s neighborhood graph apart from sharing an edge with v. Next, the core vertices of G v are selected. This is the set of vertices in G v whose degree is greater than or equal to the average degree of G v . After that, CoAch applies a recursive core removal algorithm to G v . This algorithm works by dividing G v into non-core clusters of connected nodes if the density of G v is less than a user-specified density threshold. These clusters are further divided into non-core components until the density threshold is met. Core nodes are recursively added back to the cluster once a sufficiently dense subgraph is found. Once the core-removal algorithm is complete, additional post-processing of the discovered cores is applied to make them maximally dense. This gives us a set of candidate cores generated from v. The candidate cores of a single vertex are consolidated into a global set of preliminary cores. To apply this “redundancy filtering” step, every candidate core is scored against every preliminary core using the neighborhood affinity measure:",
+                "",
+                "$$ N A(A, B) = \\frac{|V_{A}| \\bigcap |V_{B}|}{|V_{A}| * |V_{B}|} $$",
+                "",
+                "for some candidate core A and some preliminary core B. If the NA score between the candidate core and its most similar preliminary core B max is less than the user-defined affinity threshold, the candidate core is added to the set of preliminary cores. Otherwise, if the density-weighted size of the candidate core (d A × |V A |) is greater than that of B m ax, then the candidate core replaces B m ax in the set of preliminary cores. After preliminary core discovery has been completed on every vertex, the preliminary cores are expanded into predicted protein complexes. For every preliminary core C = (V C , E C ), CoAch takes the set of directly adjacent neighbors, N C . Then, the algorithm adds all v ∈ N C adjacent to more than half of the vertices in C. This measure is also known as the closeness of v to C: ",
+                "",
+                "$$ closeness(v, C) = \\frac{|N_{v}| \\bigcap |V_{c}| }{|V_{c}|}$$",
+                "",
+                "where N v is the neighbor set of v."
+            ],
+            "mode": "preview",
+            "evaluatorReader": false
+        },
+        {
+            "id": "markdownkWfsD3",
+            "type": "markdown",
+            "body": [
+                "## On our favorite beer creating creature: yeast! (not really, this is his brother Sacchoromyces Cerevisiae)"
+            ],
+            "mode": "preview",
+            "evaluatorReader": false
+        },
+        {
+            "id": "coderfHwOr",
+            "evaluator": "IPython",
+            "type": "code",
+            "input": {
+                "body": [
+                    "graph = networkx.read_edgelist('/home/morio/workspace/hackCambridge/data/network_ICND_1_wo_weights.txt')",
+                    "graphistry.bind(source='src', destination='dst', node='nodeid').plot(graph)"
+                ]
+            },
+            "output": {
+                "result": "<div class=\"output_subarea output_html rendered_html\"><iframe id=\"3bb4fc46-0403-4cfd-a441-f0060a9b1d4c\" style=\"display:none; width:100%; height:500px; border: 1px solid #DDD\">\n                </iframe><script>var p = document.location.protocol;\n                        if(p === \"file:\") {p = \"http:\";}\n                        $(\"#3bb4fc46-0403-4cfd-a441-f0060a9b1d4c\").attr(\"src\", p + \"//proxy-labs.graphistry.com/graph/graph.html?dataset=PyGraphistry/5ADK4WKOCP&type=vgraph&viztoken=05695f1b1ac2cec7452092416a55d5912e932e77&usertag=25c60902-pygraphistry-0.9.17&splashAfter=1454237873&info=true\").show();\n                </script><script>\n            $(\"#3bb4fc46-0403-4cfd-a441-f0060a9b1d4c\").bind('mousewheel', function(e) {\n                e.preventDefault();\n            });\n        </script></div>",
+                "selectedType": "Html",
+                "state": {},
+                "pluginName": "IPython",
+                "shellId": "08FC1032BC6F4DAB9DF0E9F1B3F64414",
+                "elapsedTime": 11898,
+                "height": 523
+            },
+            "evaluatorReader": true
+        },
+        {
+            "id": "markdownUvF2q2",
+            "type": "markdown",
+            "body": [
+                "## On Facebook! (from the SNAP database)"
+            ],
+            "mode": "preview",
+            "evaluatorReader": false
+        },
+        {
+            "id": "codeFb3av3",
+            "evaluator": "IPython",
+            "type": "code",
+            "input": {
+                "body": [
+                    "# Facebook friends from the Stanford National Analysis Project",
+                    "graph = networkx.read_edgelist('/home/morio/workspace/hackCambridge/facebook_combined.txt')",
+                    "graphistry.bind(source='src', destination='dst', node='nodeid').plot(graph)"
+                ]
+            },
+            "output": {
+                "result": "",
+                "selectedType": "Hidden",
+                "state": {},
+                "height": 34
+            },
+            "evaluatorReader": true,
+            "lineCount": 3
+        },
+        {
+            "id": "codeg5MrMK",
+            "type": "code",
+            "evaluator": "IPython",
+            "input": {
+                "body": [
+                    "# Facebook friends from the Stanford National Analysis Project",
+                    "graph = networkx.read_edgelist('/home/morio/workspace/hackCambridge/facebook_combined.txt')",
+                    "graphistry.bind(source='src', destination='dst', node='nodeid').plot(graph)"
+                ]
+            },
+            "output": {
+                "state": {},
+                "result": "<div class=\"output_subarea output_html rendered_html\"><iframe id=\"bfea7322-a6d4-4da8-bd68-08f95da440e7\" style=\"display:none; width:100%; height:500px; border: 1px solid #DDD\">\n                </iframe><script>var p = document.location.protocol;\n                        if(p === \"file:\") {p = \"http:\";}\n                        $(\"#bfea7322-a6d4-4da8-bd68-08f95da440e7\").attr(\"src\", p + \"//proxy-labs.graphistry.com/graph/graph.html?dataset=PyGraphistry/IVQO3YG7UE&type=vgraph&viztoken=5edb5a90dff3a4c1474173b34dff4aeb8363e9e0&usertag=25c60902-pygraphistry-0.9.17&splashAfter=1454240507&info=true\").show();\n                </script><script>\n            $(\"#bfea7322-a6d4-4da8-bd68-08f95da440e7\").bind('mousewheel', function(e) {\n                e.preventDefault();\n            });\n        </script></div>",
+                "selectedType": "Html",
+                "pluginName": "IPython",
+                "shellId": "08FC1032BC6F4DAB9DF0E9F1B3F64414",
+                "elapsedTime": 11305,
+                "height": 523
+            },
+            "evaluatorReader": true,
+            "lineCount": 3
+        }
+    ],
+    "tagMap": {
+        "root": [
+            "markdownmqLpeS",
+            "code6HIPet",
+            "markdownDdAD6X",
+            "markdown5Yi3Yk",
+            "markdown22tbRq",
+            "markdown40qMwA",
+            "markdownbjVvoF",
+            "markdownkWfsD3",
+            "coderfHwOr",
+            "markdownUvF2q2",
+            "codeFb3av3"
+        ]
+    },
+    "tagMap2": {
+        "initialization": [],
+        "IPython": [
+            "markdownmqLpeS",
+            "code6HIPet",
+            "markdownDdAD6X",
+            "markdown5Yi3Yk",
+            "markdown22tbRq",
+            "markdown40qMwA",
+            "markdownbjVvoF",
+            "markdownkWfsD3",
+            "coderfHwOr",
+            "markdownUvF2q2",
+            "codeFb3av3"
+        ]
+    },
+    "namespace": {}
+}
